@@ -52,9 +52,17 @@ export default function StudentDashboard() {
   const [quizFinished, setQuizFinished] = useState(false);
 
   const chatEndRef = useRef(null);
-  const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+const chatContainerRef = useRef(null); // <--- ADD THIS 1/3
+const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+        // This safely scrolls ONLY the chat container, not the whole page
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+};
 
-  useEffect(() => scrollToBottom(), [chat]);
+useEffect(() => {
+    scrollToBottom();
+}, [chat, loading]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -180,7 +188,10 @@ export default function StudentDashboard() {
       {/* CHAT AREA */}
       <div className="flex-1 bg-gray-50 dark:bg-gray-900 p-6 rounded-[2rem] shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col min-h-0 relative">
         <h2 className="text-lg font-black text-slate-800 dark:text-white mb-4">Chat with AI Tutor</h2>
-        <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-4">
+        <div 
+    ref={chatContainerRef}  
+    className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-4 scroll-smooth"
+>
           {chat.length === 0 && (
              <div className="flex items-center justify-center h-full text-center">
                <div className="text-slate-400 dark:text-slate-500">
