@@ -234,6 +234,40 @@ def get_unit_pdf(unit_name: str, db: Session = Depends(get_db)):
         return Response(content=pdf_record.file_data, media_type="application/pdf")
     else:
         return {"error": "PDF not found for this unit"}
+# --- DANGER ZONE: RESET DEMO ENDPOINT ---
+@app.get("/admin/nuke-everything-for-demo")
+def nuke_everything(db: Session = Depends(get_db)):
+    try:
+        # 1. Wipe Pinecone (The AI Memory)
+        # We need to initialize the index directly to delete
+        from pinecone import Pinecone
+        pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+        idx = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
+        idx.delete(delete_all=True)
+        print("✅ Pinecone wiped successfully.")
+
+        # 2. Wipe Database Tables (Users, PDFs, Doubts, etc.)
+        # We delete all rows but keep the table structure
+        db.query(models.DoubtRecord).delete()
+        db.query(models.UnitPDF).delete()
+        db.query(models.StudentMark).delete()
+        db.query(models.QuizScore).delete()
+        # db.query(models.User).delete()  <-- UNCOMMENT if you want to delete all accounts too!
+        
+        db.commit()
+        print("✅ Database tables cleared.")
+
+        # 3. Wipe Uploads Folder (Temporary files)
+        import shutil
+        if os.path.exists("uploads"):
+            shutil.rmtree("uploads")
+            os.makedirs("uploads") # Recreate empty folder
+        print("✅ Uploads folder cleared.")
+
+        return {"status": "Clean Slate! System is ready for a fresh demo. 🚀"}
+
+    except Exception as e:
+        return {"error": f"Reset failed: {str(e)}"}
 
 @app.get("/faculty/units")
 async def get_units(db: Session = Depends(get_db)):
