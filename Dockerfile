@@ -1,5 +1,5 @@
-# UPDATE: Changed to Python 3.10 to support newer libraries
-FROM python:3.10
+# UPDATE: Changed to Python 3.11 to support networkx and other modern libs
+FROM python:3.11
 
 # Set the working directory inside the container
 WORKDIR /app
