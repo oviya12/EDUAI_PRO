@@ -53,7 +53,7 @@ export default function FacultyDashboard() {
   const fetchAnalytics = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:8000/faculty/analytics/chart",
+        "https://ovi108-eduai.hf.space/faculty/analytics/chart",
       );
       setChartData(res.data);
     } catch (e) {
@@ -64,7 +64,7 @@ export default function FacultyDashboard() {
   const fetchDeepAnalytics = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:8000/faculty/marks/deep-analytics",
+        "https://ovi108-eduai.hf.space/faculty/marks/deep-analytics",
       );
       setAnalyticsData(res.data);
     } catch (e) {
@@ -83,7 +83,7 @@ export default function FacultyDashboard() {
     setIsDetailLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:8000/faculty/analytics/topics/${unitName}`,
+        `https://ovi108-eduai.hf.space/faculty/analytics/topics/${unitName}`,
       );
       setUnitDetails(res.data);
     } catch (e) {
@@ -100,7 +100,7 @@ export default function FacultyDashboard() {
     formData.append("file", file);
     formData.append("unit", unitName.trim());
     try {
-      await axios.post("http://localhost:8000/faculty/upload", formData);
+      await axios.post("https://ovi108-eduai.hf.space/faculty/upload", formData);
       alert(`🎉 Successfully synced: ${unitName}`);
       setUnitName("");
       setFile(null);
@@ -119,7 +119,7 @@ export default function FacultyDashboard() {
 
     try {
       const res = await axios.post(
-        "http://localhost:8000/faculty/upload-cat1",
+        "https://ovi108-eduai.hf.space/faculty/upload-cat1",
         formData,
       );
 
@@ -146,7 +146,7 @@ export default function FacultyDashboard() {
 
     try {
       const res = await axios.post(
-        "http://localhost:8000/faculty/upload-cat2",
+        "https://ovi108-eduai.hf.space/faculty/upload-cat2",
         formData,
       );
 

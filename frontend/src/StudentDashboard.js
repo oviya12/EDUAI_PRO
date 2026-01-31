@@ -59,12 +59,12 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/faculty/units");
+        const res = await axios.get("https://ovi108-eduai.hf.space/faculty/units");
         if (res.data?.length > 0) { setUnits(res.data); setSelectedUnit(res.data[0]); }
         setIsSidebarLoading(false);
 
         // Fetch XP
-        const stats = await axios.get("http://localhost:8000/student/stats");
+        const stats = await axios.get("https://ovi108-eduai.hf.space/student/stats");
         setXp(stats.data.xp || 0);
       } catch (e) { console.error("Init Error", e); }
     };
@@ -85,7 +85,7 @@ export default function StudentDashboard() {
     formData.append("history", JSON.stringify(updatedChat));
 
     try {
-      const res = await axios.post("http://localhost:8000/student/ask", formData);
+      const res = await axios.post("https://ovi108-eduai.hf.space/student/ask", formData);
       setChat([...updatedChat, { role: 'ai', text: res.data.answer, simulation: res.data.simulation }]);
     } catch (err) { setChat([...updatedChat, { role: 'ai', text: "Error connecting." }]); }
     setLoading(false);
@@ -110,7 +110,7 @@ export default function StudentDashboard() {
     const formData = new FormData();
     formData.append("unit", selectedUnit);
     try {
-        const res = await axios.post("http://localhost:8000/student/quiz/generate", formData);
+        const res = await axios.post("https://ovi108-eduai.hf.space/student/quiz/generate", formData);
         if (res.data.quiz) setQuizQuestions(res.data.quiz);
         else { alert("Quiz Gen Failed"); setShowQuiz(false); }
     } catch (e) { alert("Error starting quiz"); setShowQuiz(false); }
@@ -133,7 +133,7 @@ export default function StudentDashboard() {
     const formData = new FormData();
     formData.append("unit", selectedUnit);
     formData.append("score", finalScore);
-    await axios.post("http://localhost:8000/student/quiz/submit", formData);
+    await axios.post("https://ovi108-eduai.hf.space/student/quiz/submit", formData);
   };
 
   return (

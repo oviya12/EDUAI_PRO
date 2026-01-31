@@ -36,7 +36,7 @@ export default function StudentLogin({setUser}) {
 
     try {
       if (view === 'login') {
-        const res = await axios.post("http://localhost:8000/auth/login", formData);
+        const res = await axios.post("https://ovi108-eduai.hf.space/auth/login", formData);
         const userName = res.data.user.full_name;
         setUser(userName); 
         localStorage.setItem("edu_user", JSON.stringify(userName)); 
@@ -47,7 +47,7 @@ export default function StudentLogin({setUser}) {
         formData.append("security_question", securityQuestion);
         formData.append("security_answer", securityAnswer);
 
-        await axios.post("http://localhost:8000/auth/signup", formData);
+        await axios.post("https://ovi108-eduai.hf.space/auth/signup", formData);
         
         setUser(fullName);
         localStorage.setItem("edu_user", JSON.stringify(fullName)); 
@@ -64,7 +64,7 @@ export default function StudentLogin({setUser}) {
   const fetchQuestion = async () => {
     if(!email) return alert("Please enter your email first.");
     try {
-      const res = await axios.get(`http://localhost:8000/auth/get-security-question?email=${email}`);
+      const res = await axios.get(`https://ovi108-eduai.hf.space/auth/get-security-question?email=${email}`);
       setFetchedQuestion(res.data.question);
     } catch (err) {
       alert("Email not found.");
@@ -78,7 +78,7 @@ export default function StudentLogin({setUser}) {
     formData.append("new_password", password); // Reusing password state for new password
 
     try {
-      await axios.post("http://localhost:8000/auth/reset-password", formData);
+      await axios.post("https://ovi108-eduai.hf.space/auth/reset-password", formData);
       alert("Password Reset Successfully! You can now login.");
       setView('login');
       setPassword(""); 
