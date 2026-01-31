@@ -19,6 +19,9 @@ from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
+from fastapi.responses import Response
+from models import UnitPDF # Import the new model
+
 
 # Load Environment Variables
 load_dotenv()
@@ -173,21 +176,64 @@ async def reset_password(
 
 # --- FACULTY CORE (Knowledge Base) ---
 @app.post("/faculty/upload")
-async def upload_material(file: UploadFile = File(...), unit: str = Form(...), db: Session = Depends(get_db)):
+async def upload_material(
+    file: UploadFile = File(...), 
+    unit: str = Form(...), 
+    db: Session = Depends(get_db)
+):
     unit_name = unit.strip() or "Others"
+    
+    # 1. READ FILE CONTENT ONCE
+    # We must read it into a variable because we need it for two places (DB and Disk)
+    file_content = await file.read()
+
+    # ---------------------------------------------------------
+    # PART A: Save PDF to Database (For "View PDF" Button)
+    # ---------------------------------------------------------
+    existing_pdf = db.query(models.UnitPDF).filter(models.UnitPDF.unit_name == unit_name).first()
+    if existing_pdf:
+        existing_pdf.file_data = file_content # Update existing
+    else:
+        new_pdf = models.UnitPDF(unit_name=unit_name, file_data=file_content) # Create new
+        db.add(new_pdf)
+    db.commit()
+
+    # ---------------------------------------------------------
+    # PART B: Save to Disk & Process for AI (Existing Logic)
+    # ---------------------------------------------------------
     file_path = f"uploads/{file.filename}"
     os.makedirs("uploads", exist_ok=True)
+    
+    # Write the content we already read to the file
     with open(file_path, "wb") as f:
-        f.write(await file.read())
+        f.write(file_content)
+
+    # Run PyPDFLoader (It reads from the file we just wrote)
     loader = PyPDFLoader(file_path)
     pages = loader.load_and_split()
+    
     for p in pages:
         p.metadata["unit"] = unit_name
+        
+    # Send to Pinecone
     PineconeVectorStore.from_documents(pages, embeddings, index_name=index_name)
+
+    # Ensure Unit exists in DoubtRecord (Your existing logic)
     if not db.query(models.DoubtRecord).filter(models.DoubtRecord.unit == unit_name).first():
         db.add(models.DoubtRecord(question="Init", topic="System", unit=unit_name))
         db.commit()
-    return {"message": "Synced successfully"}
+
+    return {"message": f"Successfully synced {unit_name} (PDF saved & AI trained)"}
+@app.get("/units/pdf/{unit_name}")
+def get_unit_pdf(unit_name: str, db: Session = Depends(get_db)):
+    # Find the PDF by Unit Name
+    pdf_record = db.query(models.UnitPDF).filter(models.UnitPDF.unit_name == unit_name).first()
+    
+    if pdf_record and pdf_record.file_data:
+        # Return the raw bytes as a PDF file
+        return Response(content=pdf_record.file_data, media_type="application/pdf")
+    else:
+        return {"error": "PDF not found for this unit"}
 
 @app.get("/faculty/units")
 async def get_units(db: Session = Depends(get_db)):

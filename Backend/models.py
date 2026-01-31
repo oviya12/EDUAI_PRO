@@ -1,7 +1,13 @@
-from sqlalchemy import Column, Integer, String, DateTime, func,Float, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, func,Float, ForeignKey, LargeBinary
 from sqlalchemy.orm import relationship
 from database import Base
 import datetime
+
+class UnitPDF(Base):
+    __tablename__ = "unit_pdfs"
+    id = Column(Integer, primary_key=True, index=True)
+    unit_name = Column(String, unique=True, index=True)
+    file_data = Column(LargeBinary)
 
 class User(Base):
     __tablename__ = "users"

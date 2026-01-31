@@ -165,13 +165,41 @@ useEffect(() => {
                <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Modules</h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                {isSidebarLoading ? <p>Loading...</p> : units.map((unit, index) => (
-                    <button key={index} onClick={() => setSelectedUnit(unit)} className={`w-full text-left px-4 py-2 rounded-lg font-medium ${selectedUnit === unit ? "bg-indigo-600 text-white shadow-md" : "bg-gray-100 text-gray-800"}`}>
-                    {unit}
-                    </button>
-                ))}
-            </div>
+            {/* Sidebar Unit List */}
+<div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+    {isSidebarLoading ? <p>Loading...</p> : units.map((unit, index) => (
+        <div key={index} className={`group flex items-center justify-between px-4 py-2 rounded-lg font-medium transition-all ${selectedUnit === unit ? "bg-indigo-600 text-white shadow-md" : "bg-gray-100 text-gray-800 hover:bg-gray-200"}`}>
+            
+            {/* 1. The Unit Name Button (Click to Select) */}
+            <button 
+                onClick={() => setSelectedUnit(unit)} 
+                className="flex-1 text-left truncate focus:outline-none"
+            >
+                {unit}
+            </button>
+
+            {/* 2. The Open PDF Button (Click to View) */}
+            <a 
+                href={`https://ovi108-eduai.hf.space/units/pdf/${encodeURIComponent(unit)}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                title="View Study Material"
+                className={`ml-2 p-1.5 rounded-md hover:bg-white/20 ${selectedUnit === unit ? "text-white" : "text-indigo-600"}`}
+                onClick={(e) => e.stopPropagation()} // Prevents selecting the unit when clicking PDF
+            >
+                {/* PDF Icon (SVG) */}
+                <div className="flex items-center gap-1">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    
+                </svg>
+                <p>open</p>
+                </div>
+            </a>
+            
+        </div>
+    ))}
+</div>
 
             <div className="space-y-3 mt-4">
                 {/* QUIZ BUTTON (NEW) */}
