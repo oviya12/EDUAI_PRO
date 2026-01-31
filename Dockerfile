@@ -1,4 +1,4 @@
-# UPDATE: Changed to Python 3.11 to support networkx and other modern libs
+# Use Python 3.11 (Works with your newer libraries)
 FROM python:3.11
 
 # Set the working directory inside the container
@@ -12,6 +12,11 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Copy the rest of your application code
 COPY . .
+
+# --- THE FIX ---
+# This tells Python: "Also look inside the Backend folder for imports"
+# This allows 'import models' to work even though it is inside a subfolder
+ENV PYTHONPATH=/app/Backend
 
 # Create a writable directory for uploads
 RUN mkdir -p /app/uploads && chmod 777 /app/uploads
