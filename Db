@@ -1,0 +1,146 @@
+
+import os
+from datetime import datetime, timezone
+from uuid import uuid4
+
+import psycopg
+from dotenv import load_dotenv
+from psycopg.rows import dict_row
+
+load_dotenv()
+
+
+def _connect():
+    """Create a PostgreSQL connection."""
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        raise RuntimeError("DATABASE_URL is missing from .env")
+
+    return psycopg.connect(database_url, row_factory=dict_row)
+
+
+def init_db() -> None:
+    """Create the required tables if they do not exist."""
+    with _connect() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                conversation_id UUID PRIMARY KEY,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id BIGSERIAL PRIMARY KEY,
+                conversation_id UUID NOT NULL
+                    REFERENCES conversations(conversation_id)
+                    ON DELETE CASCADE,
+                role VARCHAR(20) NOT NULL,
+                content TEXT NOT NULL,
+                timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
+
+
+def get_or_create_conversation(
+    conversation_id: str | None,
+) -> str:
+    """Return an existing conversation ID or create a new one."""
+    if conversation_id:
+        with _connect() as conn:
+            row = conn.execute(
+                """
+                SELECT conversation_id
+                FROM conversations
+                WHERE conversation_id = %s
+                """,
+                (conversation_id,),
+            ).fetchone()
+
+            if row:
+                return str(row["conversation_id"])
+
+    new_id = str(uuid4())
+
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO conversations (conversation_id)
+            VALUES (%s)
+            """,
+            (new_id,),
+        )
+
+    return new_id
+
+
+def get_history(conversation_id: str) -> list[dict]:
+    """Retrieve the most recent 20 messages in chronological order."""
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT role, content, timestamp
+            FROM messages
+            WHERE conversation_id = %s
+            ORDER BY id DESC
+            LIMIT 20
+            """,
+            (conversation_id,),
+        ).fetchall()
+
+    rows.reverse()
+
+    return [
+        {
+            "role": row["role"],
+            "content": row["content"],
+            "timestamp": row["timestamp"].isoformat(),
+        }
+        for row in rows
+    ]
+
+
+def add_turn(
+    conversation_id: str,
+    role: str,
+    content: str,
+) -> None:
+    """Persist a user or assistant message."""
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO messages (conversation_id, role, content)
+            VALUES (%s, %s, %s)
+            """,
+            (conversation_id, role, content),
+        )
+
+
+def list_conversations() -> list[dict]:
+    """List conversations with message counts and latest timestamps."""
+    with _connect() as conn:
+        rows = conn.execute("""
+            SELECT
+                c.conversation_id,
+                COUNT(m.id) AS messages,
+                MAX(m.timestamp) AS last_message_at
+            FROM conversations c
+            LEFT JOIN messages m
+                ON m.conversation_id = c.conversation_id
+            GROUP BY c.conversation_id, c.created_at
+            ORDER BY COALESCE(MAX(m.timestamp), c.created_at) DESC
+        """).fetchall()
+
+    return [
+        {
+            "conversation_id": str(row["conversation_id"]),
+            "messages": row["messages"],
+            "last_message_at": (
+                row["last_message_at"].isoformat()
+                if row["last_message_at"]
+                else None
+            ),
+        }
+        for row in rows
+    ]
